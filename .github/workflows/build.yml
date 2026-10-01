@@ -20,10 +20,30 @@ jobs:
         run: echo "android.useAndroidX=true" > YtAudio/gradle.properties
       - name: Update library version
         run: sed -i 's/0.17.2/0.18.1/g' YtAudio/app/build.gradle.kts
-      - name: Add yt-dlp auto update
-        run: sed -i 's|ready = true|runCatching { YoutubeDL.getInstance().updateYoutubeDL(applicationContext, YoutubeDL.UpdateChannel.NIGHTLY) }; ready = true|' YtAudio/app/src/main/java/com/example/ytaudio/MainActivity.kt
-      - name: Build
-        run: cd YtAudio && gradle assembleDebug
+      - name: Build with auto-update patch
+        run: |
+          cd YtAudio
+          F=app/src/main/java/com/example/ytaudio/MainActivity.kt
+          cp $F /tmp/orig.kt
+          CALLS=(
+            'updateYoutubeDL(applicationContext, YoutubeDL.UpdateChannel.NIGHTLY)'
+            'updateYoutubeDL(applicationContext, YoutubeDL.UpdateChannel._NIGHTLY)'
+            'updateYoutubeDL(applicationContext, YoutubeDL.UpdateChannel.STABLE)'
+            'updateYoutubeDL(applicationContext, YoutubeDL.UpdateChannel._STABLE)'
+            'updateYoutubeDL(applicationContext)'
+          )
+          ok=0
+          for CALL in "${CALLS[@]}"; do
+            echo "TRYING: $CALL"
+            cp /tmp/orig.kt $F
+            sed -i "s|ready = true|runCatching { YoutubeDL.getInstance().$CALL }; ready = true|" $F
+            if gradle assembleDebug -q; then
+              echo "USED: $CALL"
+              ok=1
+              break
+            fi
+          done
+          test $ok = 1
       - name: Publish APK
         uses: softprops/action-gh-release@v2
         with:
