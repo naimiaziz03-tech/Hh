@@ -14,9 +14,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 8.7
-      - run: unzip -q YtAudio.zip
-      - run: cd YtAudio && gradle assembleDebug
-      - uses: softprops/action-gh-release@v2
+      - - run: unzip -q YtAudio.zip
+      - run: |
+          printf "android.useAndroidX=true\norg.gradle.jvmargs=-Xmx3g\n" > YtAudio/gradle.properties
+          sed -i 's/0\.17\.2/0.18.1/g' YtAudio/app/build.gradle.kts
         with:
           tag_name: latest
           files: YtAudio/app/build/outputs/apk/debug/app-debug.apk
