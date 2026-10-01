@@ -19,7 +19,9 @@ jobs:
       - name: Fix config
         run: echo "android.useAndroidX=true" > YtAudio/gradle.properties
       - name: Update library version
-        run: sed -i 's/0.17.2/0.18.1/g' YtAudio/app/build.gradle.kts
+        - name: Add yt-dlp auto update
+        run: |
+          sed -i 's/0.17.2/0.18.1/g' YtAudio/app/build.gradle.kts
       - name: Build
         run: cd YtAudio && gradle assembleDebug
       - name: Publish APK
